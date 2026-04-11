@@ -38,24 +38,35 @@ Workshop resources and (completely optional) [notebooks](https://docs.google.com
 
 ## Setup
 
-Each track has its own virtual environment (Python 3.14, PennyLane 0.44.1). Activate before launching Jupyter:
+Each track now includes its own `uv` project so you can recreate the environment locally instead of depending on a prebuilt `venv`.
 
 ```bash
-# bash / zsh
-source "Computational Track/venv/bin/activate"
-source "Scientific Track/venv/bin/activate"
+# install uv first if needed:
+# https://docs.astral.sh/uv/getting-started/installation/
+
+# create the Computational Track environment
+uv sync --project "Computational Track"
+
+# create the Scientific Track environment
+uv sync --project "Scientific Track"
 ```
 
-```fish
-# fish
-source "Computational Track/venv/bin/activate.fish"
-source "Scientific Track/venv/bin/activate.fish"
+Both track environments target Python 3.14. The Scientific Track environment pins PennyLane `0.44.1`.
+
+To work on a track, the simplest option is to run Jupyter through `uv`:
+
+```bash
+uv run --project "Computational Track" jupyter lab "Computational Track/starter.ipynb"
+uv run --project "Scientific Track" jupyter lab "Scientific Track/starter.ipynb"
 ```
 
-Then launch the notebook for whichever track you're working on:
+If you prefer activation, `uv sync` creates a local `.venv` inside each track:
 
-```
+```bash
+source "Computational Track/.venv/bin/activate"
 jupyter lab "Computational Track/starter.ipynb"
+
+source "Scientific Track/.venv/bin/activate"
 jupyter lab "Scientific Track/starter.ipynb"
 ```
 

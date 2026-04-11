@@ -139,6 +139,8 @@ celerybeat.pid
 .envrc
 CLAUDE.md
 env/
+.venv/
+**/.venv/
 
 ENV/
 env.bak/
