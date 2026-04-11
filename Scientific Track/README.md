@@ -73,7 +73,7 @@ J₁ wins:   ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑    (ferromagnetic - everyone agrees
             "align with your neighbor"
 ```
 
-### Force 2: Next-Nearest-Neighbor Frustration ($+|\,J_2\,| \sum_i Z_i Z_{i+2}$)
+### Force 2: Next-Nearest-Neighbor Frustration ($+J_1\kappa \sum_i Z_i Z_{i+2}$)
 
 Spins two sites apart want to **anti-align** (one up, one down). This directly competes with Force 1 - if your nearest neighbor wants you to point up but your next-nearest neighbor wants you to point down, which do you listen to? This tension is called **frustration**.
 
@@ -94,14 +94,14 @@ h wins:    → → → → → → → →    (paramagnetic - everyone follows t
 
 ## The Hamiltonian
 
-Putting it all together:
+Putting it all together, with $J_1 > 0$ as the ferromagnetic coupling and $\kappa = |J_2|/J_1 \geq 0$ as the dimensionless frustration ratio:
 
-$$H = -J_1 \sum_i Z_i Z_{i+1} \;-\; J_2 \sum_i Z_i Z_{i+2} \;-\; h \sum_i X_i$$
+$$H = -J_1 \sum_i Z_i Z_{i+1} \;+\; J_1\kappa \sum_i Z_i Z_{i+2} \;-\; h \sum_i X_i$$
 
-We parametrize the model using two dimensionless ratios:
+The positive sign on the second term reflects that the next-nearest interaction is antiferromagnetic (it prefers anti-aligned spins two sites apart, competing with the nearest-neighbor ferromagnetic alignment). By convention we set $J_1 = 1$, so the two free parameters are:
 
-- **$\kappa = -J_2 / J_1$** - the frustration strength (0 = no frustration, 1 = strong frustration)
-- **$h / J_1$** - the transverse field strength (often just written as $h$ with $J_1 = 1$)
+- **$\kappa \geq 0$** — frustration strength. At $\kappa = 0$ there is no competing interaction; above $\kappa \approx 0.5$ the antiphase becomes the dominant ordered phase at low field.
+- **$h \geq 0$** — transverse field strength (in units of $J_1$).
 
 By sweeping $\kappa$ from 0 to 1 and $h$ from 0 to 2, we can map out the **phase diagram** - a 2D plot showing which phase the system is in at each $(\kappa, h)$ point.
 
@@ -188,15 +188,15 @@ The analytical transition lines (from the [PennyLane ANNNI demo](https://pennyla
 
 $$h_I(\kappa) \approx \frac{1-\kappa}{\kappa}\left(1 - \sqrt{\frac{1-3\kappa+4\kappa^2}{1-\kappa}}\right)$$
 
-- **Kosterlitz-Thouless transition** (para ↔ antiphase, for $\kappa > 0.5$):
+- **Kosterlitz-Thouless (KT) transition** (floating ↔ para, for $\kappa > 0.5$) — the upper boundary of the floating phase:
 
-$$h_C(\kappa) \approx 1.05\sqrt{(\kappa-0.5)(\kappa-0.1)}$$
+$$h_{KT}(\kappa) \approx 1.05\sqrt{(\kappa-0.5)(\kappa-0.1)}$$
 
-- **BKT transition** (floating phase boundary, for $\kappa > 0.5$):
+- **BKT transition** (antiphase ↔ floating, for $\kappa > 0.5$) — the lower boundary of the floating phase:
 
 $$h_{BKT}(\kappa) \approx 1.05(\kappa - 0.5)$$
 
-Your clean phase diagram should roughly match these. The starter kit provides functions to plot them as overlays, but remember that for finite $N$ with periodic boundaries they are best treated as qualitative reference lines rather than exact truth at every grid point.
+For $\kappa > 0.5$, ordering from low to high field: antiphase → floating → paramagnetic, bounded by $h_{BKT}$ and $h_{KT}$ respectively. Your clean phase diagram should roughly match these curves. The starter kit provides functions to plot them as overlays, but at finite $N$ with periodic boundaries they are best treated as qualitative reference lines rather than exact boundaries.
 
 ---
 
@@ -206,11 +206,11 @@ Your clean phase diagram should roughly match these. The starter kit provides fu
 
 In a perfect quantum computer, gates execute exactly as intended. In a real one, every gate has a small chance of introducing an error.
 
-**Depolarizing noise** is a simple error model: after a two-qubit gate (like CNOT), the target qubit has probability $p$ of being replaced by a completely random state. Specifically, with probability $p/3$ each, one of the Pauli errors (X, Y, or Z) is applied to the target qubit.
+**Depolarizing noise** is a standard error model for quantum gates. After each CNOT, the target qubit undergoes a random Pauli error with total probability $p$: each of X, Y, and Z is applied with probability $p/3$, so the qubit is left unchanged with probability $1 - p$.
 
 - At $p = 0$: no noise, perfect gates
-- At $p = 0.01$: 1% chance of error per CNOT - mild noise
-- At $p = 0.05$: 5% chance of error per CNOT - significant noise
+- At $p = 0.01$: 1% total error probability per CNOT — mild noise
+- At $p = 0.05$: 5% total error probability per CNOT — significant noise
 
 ## How to Add Noise in PennyLane
 
@@ -236,7 +236,7 @@ The starter kit's `noise_utils.py` provides a small wrapper that demonstrates th
 
 **What you should expect to see**:
 - At $p = 0.01$: phase boundaries shift slightly, phases are still distinguishable
-- At $p = 0.05$: significant blurring - the ordered phases shrink as noise pushes more of parameter space toward looking paramagnetic
+- At $p = 0.05$: significant blurring — the ordered phases shrink as noise pushes more of parameter space toward looking paramagnetic
 - The **ferromagnetic** phase may be more robust than the **antiphase** (because the antiphase has a more complex correlation pattern that's more fragile)
 - The **floating phase** (if you can detect it at all) will likely be the first to disappear under noise
 
@@ -265,7 +265,7 @@ def build_annni_hamiltonian(n_qubits, kappa, h, j1=1.0, periodic=True):
 
     # Next-nearest-neighbor ZZ (frustrating)
     for i in range(n_qubits - 2 + 2*int(periodic)):
-        coeffs.append(j1 * kappa)  # positive = antiferromagnetic
+        coeffs.append(j1 * kappa)  # positive: penalizes aligned next-nearest pairs (antiferromagnetic at this distance)
         obs.append(qml.Z(i % n_qubits) @ qml.Z((i+2) % n_qubits))
 
     # Transverse field X
@@ -273,7 +273,7 @@ def build_annni_hamiltonian(n_qubits, kappa, h, j1=1.0, periodic=True):
         coeffs.append(-h)
         obs.append(qml.X(i))
 
-    return qml.Hamiltonian(coeffs, obs)
+    return qml.dot(coeffs, obs)
 ```
 
 Also see: [PennyLane: How to Build Spin Hamiltonians](https://pennylane.ai/qml/demos/tutorial_how_to_build_spin_hamiltonians) for the `qml.spin` module approach.

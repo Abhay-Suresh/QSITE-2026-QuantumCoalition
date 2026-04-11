@@ -104,8 +104,8 @@ Your "street map" is a **20-qubit heavy-hex-style teaching graph**. It looks lik
 ```
 
 Key properties:
-- Each qubit connects to **2–3 neighbors** (not all qubits are equal - corner qubits have fewer connections)
-- There is **no direct connection** between most qubit pairs (e.g., qubit 0 and qubit 15)
+- Each qubit connects to **1–3 neighbors** (nodes 3 and 16 are dead ends with a single connection; all other nodes have 2 or 3)
+- There is **no direct connection** between most qubit pairs (e.g., qubit 0 and qubit 19 are 7 hops apart)
 - A two-qubit gate can **only** execute between qubits that share an edge
 
 In the starter notebook, this graph is built directly in code as a `networkx.Graph`. You can visualize it, query shortest paths, check adjacency, and test heuristics with standard NetworkX functions.
@@ -318,17 +318,23 @@ Every other gate (Hadamard, SWAP, Toffoli, etc.) must be **decomposed** into seq
 
 ### Why the Bad Baseline Is Bad
 
-The provided `baseline_decompose.py` uses the most wasteful valid decompositions and inserts pointless operations:
+The provided `baseline_decompose.py` wraps every operation with pointless `RZ(0.0)` identity rotations (a zero-angle rotation does nothing):
 
 ```
-Hadamard gate:
-  Good decomposition:  RZ(π/2) → SX → RZ(π/2)           [3 gates]
-  Bad baseline:        RZ(π/2) → SX → RZ(π/2) → RZ(0) → RZ(0)  [5 gates - two identity rotations!]
-
 SWAP gate:
-  Good decomposition:  3 CNOTs with minimal overhead       [~9 native gates]
-  Bad baseline:        3 CNOTs each independently bloated   [~15+ native gates]
+  Good decomposition:  CNOT(a,b) → CNOT(b,a) → CNOT(a,b)                                       [3 gates]
+  Bad baseline:        RZ(0) → CNOT(a,b) → RZ(0) → CNOT(b,a) → RZ(0) → CNOT(a,b) → RZ(0)     [7 gates]
+
+2Q gate (treated as CNOT):
+  Good decomposition:  CNOT(a,b)                                                                 [1 gate]
+  Bad baseline:        RZ(0) → CNOT(a,b) → RZ(0)                                                [3 gates]
+
+1Q gate:
+  Good decomposition:  remove entirely (if identity) or fuse with neighbors                      [≤1 gate]
+  Bad baseline:        RZ(0) → SX → RZ(0)                                                       [3 gates]
 ```
+
+Every `RZ(0.0)` is a no-op and can be eliminated. On circuits with many gates, these add up quickly.
 
 ### How to Beat It
 
