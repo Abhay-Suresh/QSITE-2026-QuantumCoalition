@@ -1,7 +1,9 @@
-# Computational Track: Quantum Circuit Placement, Routing & Scheduling
+# Computational Track: Compiling for Quantum Computers
 
 ## Hacker Handout
 
+---
+A public test set and leaderboard will be made available soon, scores are not final but will provide some idea of performance.
 ---
 
 # Overview
