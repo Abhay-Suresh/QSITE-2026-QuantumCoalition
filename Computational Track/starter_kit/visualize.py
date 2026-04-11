@@ -76,3 +76,57 @@ def animate_layers(layers: list[list[tuple]], interval: int = 900):
         return ax.collections + ax.lines + ax.texts
 
     return FuncAnimation(fig, _update, frames=len(layers), interval=interval, blit=False)
+
+
+def animate_routing(
+    initial_placement: dict[int, int],
+    routed_program: list[tuple],
+    graph: nx.Graph | None = None,
+    interval: int = 800,
+) -> FuncAnimation:
+    """Animate qubit positions as the router executes SWAPs and gates.
+
+    Each frame shows:
+    - the current logical-to-physical mapping as labels on the hardware graph,
+    - the edge involved in the current SWAP or 2Q gate (highlighted in red).
+
+    Frames are generated for the initial state, every SWAP, and every 2Q gate.
+    Single-qubit gates produce no frame (they don't move qubits or require adjacency).
+    """
+    graph = graph or build_hardware_graph()
+
+    placement = dict(initial_placement)
+    phys_to_log: dict[int, int | None] = {phys: log for log, phys in placement.items()}
+
+    # (placement_snapshot, highlight_edges, title)
+    frame_data: list[tuple[dict, list, str]] = [
+        (dict(placement), [], "Initial placement"),
+    ]
+
+    for op in routed_program:
+        kind = op[0]
+        if kind == "SWAP":
+            _, left, right = op
+            log_left = phys_to_log.get(left)
+            log_right = phys_to_log.get(right)
+            phys_to_log[left], phys_to_log[right] = log_right, log_left
+            if log_left is not None:
+                placement[log_left] = right
+            if log_right is not None:
+                placement[log_right] = left
+            frame_data.append((dict(placement), [(left, right)], f"SWAP({left}, {right})"))
+        elif kind == "2Q":
+            _, left, right = op
+            l_label = f"L{phys_to_log[left]}" if left in phys_to_log else str(left)
+            r_label = f"L{phys_to_log[right]}" if right in phys_to_log else str(right)
+            frame_data.append((dict(placement), [(left, right)], f"Gate: {l_label} ↔ {r_label}"))
+
+    fig, ax = plt.subplots(figsize=(5.5, 5.5))
+
+    def _update(index: int) -> list:
+        ax.clear()
+        snap, edges, title = frame_data[index]
+        draw_hardware(graph=graph, placement=snap, highlight_edges=edges, ax=ax, title=title)
+        return ax.collections + ax.lines + ax.texts
+
+    return FuncAnimation(fig, _update, frames=len(frame_data), interval=interval, blit=False)
