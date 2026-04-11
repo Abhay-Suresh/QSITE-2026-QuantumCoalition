@@ -44,11 +44,11 @@ You should read both before starting. The starter kit builds on top of them.
 
 ---
 
-# The ANNNI Model — What Are We Simulating?
+# The ANNNI Model - What Are We Simulating?
 
 ## Spins on a Chain
 
-Imagine a row of tiny magnets (spins), each pointing either **up** (↑) or **down** (↓). In quantum mechanics, each spin can also be in a **superposition** of up and down — but for building intuition, think of them as little arrows.
+Imagine a row of tiny magnets (spins), each pointing either **up** (↑) or **down** (↓). In quantum mechanics, each spin can also be in a **superposition** of up and down - but for building intuition, think of them as little arrows.
 
 ```
 Site:     1    2    3    4    5    6    7    8
@@ -57,7 +57,7 @@ Spin:     ↑    ↑    ↑    ↑    ↑    ↑    ↑    ↑     ← ferromagn
           →    →    →    →    →    →    →    →     ← paramagnetic (aligned with field)
 ```
 
-What determines which pattern the spins settle into? **The Hamiltonian** — the energy function that describes all the forces acting on the spins.
+What determines which pattern the spins settle into? **The Hamiltonian** - the energy function that describes all the forces acting on the spins.
 
 ## The Three Competing Forces
 
@@ -68,18 +68,18 @@ The ANNNI model has three terms that each "want" something different:
 Adjacent spins want to **align** (both up or both down). This is the ferromagnetic interaction. If this force dominates, all spins point the same way.
 
 ```
-J₁ wins:   ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑    (ferromagnetic — everyone agrees)
-            ←——→←——→←——→←——→
+J₁ wins:   ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑    (ferromagnetic - everyone agrees)
+            ←--→←--→←--→←--→
             "align with your neighbor"
 ```
 
 ### Force 2: Next-Nearest-Neighbor Frustration ($+|\,J_2\,| \sum_i Z_i Z_{i+2}$)
 
-Spins two sites apart want to **anti-align** (one up, one down). This directly competes with Force 1 — if your nearest neighbor wants you to point up but your next-nearest neighbor wants you to point down, which do you listen to? This tension is called **frustration**.
+Spins two sites apart want to **anti-align** (one up, one down). This directly competes with Force 1 - if your nearest neighbor wants you to point up but your next-nearest neighbor wants you to point down, which do you listen to? This tension is called **frustration**.
 
 ```
-|J₂| wins:   ↑ ↑ ↓ ↓ ↑ ↑ ↓ ↓    (antiphase — compromise pattern)
-              ←———→ ←———→ ←———→
+|J₂| wins:   ↑ ↑ ↓ ↓ ↑ ↑ ↓ ↓    (antiphase - compromise pattern)
+              ←---→ ←---→ ←---→
               "anti-align with your next-nearest neighbor"
 ```
 
@@ -88,7 +88,7 @@ Spins two sites apart want to **anti-align** (one up, one down). This directly c
 An external magnetic field pointing sideways tries to rotate all spins to point along its direction. If this field is strong enough, it overwhelms both coupling forces and disorders the system.
 
 ```
-h wins:    → → → → → → → →    (paramagnetic — everyone follows the field)
+h wins:    → → → → → → → →    (paramagnetic - everyone follows the field)
            "ignore your neighbors, follow the field"
 ```
 
@@ -100,10 +100,10 @@ $$H = -J_1 \sum_i Z_i Z_{i+1} \;-\; J_2 \sum_i Z_i Z_{i+2} \;-\; h \sum_i X_i$$
 
 We parametrize the model using two dimensionless ratios:
 
-- **$\kappa = -J_2 / J_1$** — the frustration strength (0 = no frustration, 1 = strong frustration)
-- **$h / J_1$** — the transverse field strength (often just written as $h$ with $J_1 = 1$)
+- **$\kappa = -J_2 / J_1$** - the frustration strength (0 = no frustration, 1 = strong frustration)
+- **$h / J_1$** - the transverse field strength (often just written as $h$ with $J_1 = 1$)
 
-By sweeping $\kappa$ from 0 to 1 and $h$ from 0 to 2, we can map out the **phase diagram** — a 2D plot showing which phase the system is in at each $(\kappa, h)$ point.
+By sweeping $\kappa$ from 0 to 1 and $h$ from 0 to 2, we can map out the **phase diagram** - a 2D plot showing which phase the system is in at each $(\kappa, h)$ point.
 
 The starter kit in `Scientific Track/starter_kit/` provides a helper function that builds this Hamiltonian in PennyLane:
 
@@ -124,13 +124,13 @@ H = build_annni_hamiltonian(n_qubits=8, kappa=0.3, h=0.5)
 
 ---
 
-# Phase Transitions — What Are We Looking For?
+# Phase Transitions - What Are We Looking For?
 
 ## What Is a Phase Transition?
 
 You know how water suddenly becomes ice at 0°C? The molecules are the same, but their collective behavior changes abruptly. That's a classical phase transition driven by temperature.
 
-**Quantum phase transitions** are similar but driven by changing the Hamiltonian parameters (like $\kappa$ and $h$) at zero temperature. As you smoothly change a parameter, the **ground state** (lowest-energy state) of the system can suddenly change its character — from ordered to disordered, from one pattern to another.
+**Quantum phase transitions** are similar but driven by changing the Hamiltonian parameters (like $\kappa$ and $h$) at zero temperature. As you smoothly change a parameter, the **ground state** (lowest-energy state) of the system can suddenly change its character - from ordered to disordered, from one pattern to another.
 
 The points where this happens are **phase boundaries**, and finding them is the core of this challenge.
 
@@ -142,13 +142,13 @@ There are several valid approaches. You choose whichever fits your skills and in
 
 **Idea**: measure a quantity that takes different values in different phases. Where it changes sharply, there's a transition.
 
-- **Magnetization** $M = \frac{1}{N}\sum_i \langle Z_i \rangle$ — nonzero in the ferromagnetic phase, near zero elsewhere
-- **Staggered magnetization** — measures the ↑↑↓↓ pattern; large in the antiphase, small elsewhere
-- **Correlation functions** $\langle Z_i Z_j \rangle$ — how correlated distant spins are
+- **Magnetization** $M = \frac{1}{N}\sum_i \langle Z_i \rangle$ - nonzero in the ferromagnetic phase, near zero elsewhere
+- **Staggered magnetization** - measures the ↑↑↓↓ pattern; large in the antiphase, small elsewhere
+- **Correlation functions** $\langle Z_i Z_j \rangle$ - how correlated distant spins are
 
 **Workflow**: use VQE or exact diag to find the ground state at each $(\kappa, h)$ point, measure the order parameter, plot it as a heatmap.
 
-**Reference**: [PennyLane: Seeing Quantum Phase Transitions](https://pennylane.ai/qml/demos/tutorial_quantum_phase_transitions) — does exactly this for the simpler transverse-field Ising model.
+**Reference**: [PennyLane: Seeing Quantum Phase Transitions](https://pennylane.ai/qml/demos/tutorial_quantum_phase_transitions) - does exactly this for the simpler transverse-field Ising model.
 
 ### Approach 2: Quantum Machine Learning (QCNN)
 
@@ -156,11 +156,11 @@ There are several valid approaches. You choose whichever fits your skills and in
 
 **Workflow**: prepare ground states, label some as "ferromagnetic" or "paramagnetic" based on known boundaries, train a QCNN, predict the rest.
 
-**Reference**: [PennyLane: ANNNI Phase Detection Demo](https://pennylane.ai/qml/demos/tutorial_annni) — implements exactly this approach, plus a quantum autoencoder variant.
+**Reference**: [PennyLane: ANNNI Phase Detection Demo](https://pennylane.ai/qml/demos/tutorial_annni) - implements exactly this approach, plus a quantum autoencoder variant.
 
 ### Approach 3: Quantum Autoencoder (Unsupervised)
 
-**Idea**: train a quantum autoencoder to compress ground states. States in the same phase compress similarly; states in different phases compress differently. Use the reconstruction error as a phase indicator — no labels needed.
+**Idea**: train a quantum autoencoder to compress ground states. States in the same phase compress similarly; states in different phases compress differently. Use the reconstruction error as a phase indicator - no labels needed.
 
 **Workflow**: prepare ground states, train autoencoder, plot reconstruction error across parameter space, look for boundaries where it changes.
 
@@ -200,7 +200,7 @@ Your clean phase diagram should roughly match these. The starter kit provides fu
 
 ---
 
-# The Noise Twist — From PennyLane's Noisy Heisenberg Challenge
+# The Noise Twist - From PennyLane's Noisy Heisenberg Challenge
 
 ## What Is Depolarizing Noise?
 
@@ -209,8 +209,8 @@ In a perfect quantum computer, gates execute exactly as intended. In a real one,
 **Depolarizing noise** is a simple error model: after a two-qubit gate (like CNOT), the target qubit has probability $p$ of being replaced by a completely random state. Specifically, with probability $p/3$ each, one of the Pauli errors (X, Y, or Z) is applied to the target qubit.
 
 - At $p = 0$: no noise, perfect gates
-- At $p = 0.01$: 1% chance of error per CNOT — mild noise
-- At $p = 0.05$: 5% chance of error per CNOT — significant noise
+- At $p = 0.01$: 1% chance of error per CNOT - mild noise
+- At $p = 0.05$: 5% chance of error per CNOT - significant noise
 
 ## How to Add Noise in PennyLane
 
@@ -236,7 +236,7 @@ The starter kit's `noise_utils.py` provides a small wrapper that demonstrates th
 
 **What you should expect to see**:
 - At $p = 0.01$: phase boundaries shift slightly, phases are still distinguishable
-- At $p = 0.05$: significant blurring — the ordered phases shrink as noise pushes more of parameter space toward looking paramagnetic
+- At $p = 0.05$: significant blurring - the ordered phases shrink as noise pushes more of parameter space toward looking paramagnetic
 - The **ferromagnetic** phase may be more robust than the **antiphase** (because the antiphase has a more complex correlation pattern that's more fragile)
 - The **floating phase** (if you can detect it at all) will likely be the first to disappear under noise
 
@@ -282,7 +282,7 @@ Also see: [PennyLane: How to Build Spin Hamiltonians](https://pennylane.ai/qml/d
 
 ### Option A: Exact Diagonalization (classical reference)
 
-For N ≤ 12, you can exactly diagonalize the Hamiltonian matrix and extract the ground state. This is fast and exact — use it as a reference to validate your quantum methods.
+For N ≤ 12, you can exactly diagonalize the Hamiltonian matrix and extract the ground state. This is fast and exact - use it as a reference to validate your quantum methods.
 
 One subtle point: for finite systems, the exact ground state often preserves the global symmetry, so raw $\langle Z_i \rangle$ can stay near zero even in an ordered phase. Correlation-based observables such as $\langle Z_i Z_{i+1} \rangle$ and $\langle Z_i Z_{i+2} \rangle$ are usually more informative in a starter workflow.
 
@@ -326,7 +326,7 @@ Each of these is a valid approach with different tradeoffs:
 | **Fidelity susceptibility** | Ground state overlap | No | No demo (implement from formula) | Medium |
 | **Trotterized dynamics** | Time evolution | No | [Noisy Heisenberg Challenge](https://pennylane.ai/challenges/heisenberg_model) | Hard |
 
-**You choose your method — there is no single right approach.** Teams using different methods may all produce excellent results.
+**You choose your method - there is no single right approach.** Teams using different methods may all produce excellent results.
 
 ---
 
@@ -354,7 +354,7 @@ Each of these is a valid approach with different tradeoffs:
 
 ### Noise Analysis Depth (25%)
 
-- Goes beyond "it gets worse with noise" — which phases shift, in which direction, by how much?
+- Goes beyond "it gets worse with noise" - which phases shift, in which direction, by how much?
 - Quantitative comparison (e.g., "the ferro-para boundary at $\kappa = 0.3$ shifts from $h = 0.72$ to $h = 0.65$ at $p = 0.05$")
 - Identifies which phase is most robust and which is most fragile, with explanation
 - Comments on whether the floating phase (if detected) survives noise
@@ -389,22 +389,22 @@ Each of these is a valid approach with different tradeoffs:
 | **Noise** | 20–30 | Add depolarizing noise. Re-run at $p = 0.01$ and $p = 0.05$. Produce noisy phase diagrams. Start the comparison analysis. |
 | **Polish** | 30–36 | Write analysis, create figures, prepare presentation. Attempt bonus goals if time permits. |
 
-## Key Resources — Annotated
+## Key Resources - Annotated
 
 ### Must-Read Before Starting
 
-- 📖 [PennyLane: ANNNI Phase Detection Demo](https://pennylane.ai/qml/demos/tutorial_annni) — **your primary starting point**. Contains everything: the Hamiltonian, ground state prep with VQE, QCNN architecture, autoencoder architecture, and phase boundary formulas. Read this first.
-- 📖 [PennyLane: A Noisy Heisenberg Model](https://pennylane.ai/challenges/heisenberg_model) — the noise model you'll extend. Short challenge showing Trotterization with depolarizing noise and fidelity computation.
+- 📖 [PennyLane: ANNNI Phase Detection Demo](https://pennylane.ai/qml/demos/tutorial_annni) - **your primary starting point**. Contains everything: the Hamiltonian, ground state prep with VQE, QCNN architecture, autoencoder architecture, and phase boundary formulas. Read this first.
+- 📖 [PennyLane: A Noisy Heisenberg Model](https://pennylane.ai/challenges/heisenberg_model) - the noise model you'll extend. Short challenge showing Trotterization with depolarizing noise and fidelity computation.
 
 ### Helpful Background
 
-- 📖 [PennyLane: Seeing Quantum Phase Transitions](https://pennylane.ai/qml/demos/tutorial_quantum_phase_transitions) — VQE-based phase detection on the simpler transverse-field Ising model. Good warmup before tackling ANNNI.
-- 📖 [PennyLane: How to Build Spin Hamiltonians](https://pennylane.ai/qml/demos/tutorial_how_to_build_spin_hamiltonians) — deep dive into the `qml.spin` module for constructing lattice Hamiltonians.
-- 🔧 [CERN Quantum Phase Detection GitHub](https://github.com/CERN-IT-INNOVATION/Quantum-Phase-Detection-ANNNI) — full reference implementation with notebooks, pre-computed data, and both QCNN and autoencoder approaches.
+- 📖 [PennyLane: Seeing Quantum Phase Transitions](https://pennylane.ai/qml/demos/tutorial_quantum_phase_transitions) - VQE-based phase detection on the simpler transverse-field Ising model. Good warmup before tackling ANNNI.
+- 📖 [PennyLane: How to Build Spin Hamiltonians](https://pennylane.ai/qml/demos/tutorial_how_to_build_spin_hamiltonians) - deep dive into the `qml.spin` module for constructing lattice Hamiltonians.
+- 🔧 [CERN Quantum Phase Detection GitHub](https://github.com/CERN-IT-INNOVATION/Quantum-Phase-Detection-ANNNI) - full reference implementation with notebooks, pre-computed data, and both QCNN and autoencoder approaches.
 
 ### For Going Deep
 
-- 📄 Monaco et al., "Quantum phase detection generalization from marginal QNN models" ([Phys. Rev. B 107, 2023](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.L081105)) — the paper behind the ANNNI demo
-- 📄 Cea et al., "Exploring the Phase Diagram of the quantum 1D ANNNI model" ([arXiv:2402.11022](https://arxiv.org/abs/2402.11022)) — extended study with floating phase analysis at larger system sizes
-- 📄 arXiv:2504.10673 (2025) — QSVM + VQC approach to ANNNI classification with SHAP feature importance analysis
-- 📖 [PennyLane: Resource Estimation for Hamiltonian Simulation with GQSP](https://pennylane.ai/qml/demos/tutorial_estimator_hamiltonian_simulation_gqsp) — advanced Hamiltonian simulation resource estimation
+- 📄 Monaco et al., "Quantum phase detection generalization from marginal QNN models" ([Phys. Rev. B 107, 2023](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.L081105)) - the paper behind the ANNNI demo
+- 📄 Cea et al., "Exploring the Phase Diagram of the quantum 1D ANNNI model" ([arXiv:2402.11022](https://arxiv.org/abs/2402.11022)) - extended study with floating phase analysis at larger system sizes
+- 📄 arXiv:2504.10673 (2025) - QSVM + VQC approach to ANNNI classification with SHAP feature importance analysis
+- 📖 [PennyLane: Resource Estimation for Hamiltonian Simulation with GQSP](https://pennylane.ai/qml/demos/tutorial_estimator_hamiltonian_simulation_gqsp) - advanced Hamiltonian simulation resource estimation
