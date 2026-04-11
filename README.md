@@ -41,12 +41,21 @@ Workshop resources and (completely optional) [notebooks](https://docs.google.com
 Each track has its own virtual environment (Python 3.14, PennyLane 0.44.1). Activate before launching Jupyter:
 
 ```bash
-# Computational Track
+# bash / zsh
 source "Computational Track/venv/bin/activate"
-jupyter lab "Computational Track/starter.ipynb"
-
-# Scientific Track
 source "Scientific Track/venv/bin/activate"
+```
+
+```fish
+# fish
+source "Computational Track/venv/bin/activate.fish"
+source "Scientific Track/venv/bin/activate.fish"
+```
+
+Then launch the notebook for whichever track you're working on:
+
+```
+jupyter lab "Computational Track/starter.ipynb"
 jupyter lab "Scientific Track/starter.ipynb"
 ```
 
