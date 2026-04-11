@@ -96,7 +96,7 @@ h wins:    → → → → → → → →    (paramagnetic - everyone follows t
 
 Putting it all together, with $J_1 > 0$ as the ferromagnetic coupling and $\kappa = |J_2|/J_1 \geq 0$ as the dimensionless frustration ratio:
 
-$$H = -J_1 \sum_i Z_i Z_{i+1} \;+\; J_1\kappa \sum_i Z_i Z_{i+2} \\ h \sum_i X_i$$
+$$H = -J_1 \sum_i Z_i Z_{i+1} \;+\; J_1\kappa \sum_i Z_i Z_{i+2} - h \sum_i X_i$$
 
 The positive sign on the second term reflects that the next-nearest interaction is antiferromagnetic (it prefers anti-aligned spins two sites apart, competing with the nearest-neighbor ferromagnetic alignment). By convention we set $J_1 = 1$, so the two free parameters are:
 
