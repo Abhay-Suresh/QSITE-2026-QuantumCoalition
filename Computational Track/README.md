@@ -8,7 +8,7 @@
 
 > **You are given a set of quantum programs and a hardware connectivity graph. Your core job: find a qubit placement and SWAP routing strategy that executes all required interactions using the fewest SWAP operations and parallel time steps.**
 >
-> **For extra points**, optimize the gate decomposition and single-qubit gate layers — we provide intentionally bad baselines for both that are easy to beat.
+> **For extra points**, optimize the gate decomposition and single-qubit gate layers - we provide intentionally bad baselines for both that are easy to beat.
 
 ### The Compilation Pipeline
 
@@ -62,47 +62,47 @@ core_score = Σ_benchmarks [ swap_count + 0.5 × depth ]
 
 ### Essential Resources
 
-- [PostQuantum: Routing Quantum Information](https://postquantum.com/quantum-computing/routing-quantum-information/) — visual intro to SWAP routing
-- [IBM SABRE Tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) — the industry-standard routing algorithm explained
-- [Python `networkx` docs](https://networkx.org/documentation/stable/) — graph algorithms you'll use heavily
-- [PennyLane: Compilation of Quantum Circuits](https://pennylane.ai/qml/demos/tutorial_circuit_compilation) — useful for stretch goals
+- [PostQuantum: Routing Quantum Information](https://postquantum.com/quantum-computing/routing-quantum-information/) - visual intro to SWAP routing
+- [IBM SABRE Tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) - the industry-standard routing algorithm explained
+- [Python `networkx` docs](https://networkx.org/documentation/stable/) - graph algorithms you'll use heavily
+- [PennyLane: Compilation of Quantum Circuits](https://pennylane.ai/qml/demos/tutorial_circuit_compilation) - useful for stretch goals
 
 ---
 
-# The Problem — No Quantum Required
+# The Problem - No Quantum Required
 
 ## Think of It Like a Delivery Routing Problem
 
 Imagine you're a logistics planner. You have:
 
-- A **street map** where buildings (qubits) are connected by roads (wires). Not every building connects to every other — most connect to only 2 or 3 neighbors.
+- A **street map** where buildings (qubits) are connected by roads (wires). Not every building connects to every other - most connect to only 2 or 3 neighbors.
 - A **delivery list**: pairs of buildings that need to exchange packages. The exchanges must happen in a specific order.
 - A **constraint**: you can only hand off a package between buildings that share a road.
 
-If two buildings that need to exchange packages don't share a road, you have to **relay** the package through intermediate buildings — each relay is expensive and slow.
+If two buildings that need to exchange packages don't share a road, you have to **relay** the package through intermediate buildings - each relay is expensive and slow.
 
 Your job: decide where to place your people (placement), how to relay packages when needed (routing), and which exchanges to run simultaneously (scheduling).
 
-**That's the entire problem.** Replace "buildings" with "qubits," "roads" with "physical connections," "package exchange" with "two-qubit gate," and "relay" with "SWAP" — and you have quantum circuit compilation.
+**That's the entire problem.** Replace "buildings" with "qubits," "roads" with "physical connections," "package exchange" with "two-qubit gate," and "relay" with "SWAP" - and you have quantum circuit compilation.
 
 ## The Hardware Graph
 
 Your "street map" is a **20-qubit heavy-hex-style teaching graph**. It looks like this:
 
 ```
-    0 — 1 — 2 — 3
+    0 - 1 - 2 - 3
     |       |       
-    4 — 5 — 6 — 7
+    4 - 5 - 6 - 7
         |       |   
-    8 — 9 —10 —11
+    8 - 9 -10 -11
     |       |       
-   12 —13 —14 —15
+   12 -13 -14 -15
         |       |
-   16 —17 —18 —19
+   16 -17 -18 -19
 ```
 
 Key properties:
-- Each qubit connects to **2–3 neighbors** (not all qubits are equal — corner qubits have fewer connections)
+- Each qubit connects to **2–3 neighbors** (not all qubits are equal - corner qubits have fewer connections)
 - There is **no direct connection** between most qubit pairs (e.g., qubit 0 and qubit 15)
 - A two-qubit gate can **only** execute between qubits that share an edge
 
@@ -120,11 +120,11 @@ Suppose your program needs a two-qubit gate between logical qubits 0 and 3, and 
 
 ```
 Step 0 (initial):
-    [L0] — 1  — 2  — 3
+    [L0] - 1  - 2  - 3
      |         |       
-     4  — 5  — 6  — 7
+     4  - 5  - 6  - 7
           |         |   
-     8  — 9  —10  —[L3]
+     8  - 9  -10  -[L3]
 ```
 
 Physical qubits 0 and 11 aren't adjacent. Shortest path: 0 → 1 → 2 → 6 → 7 → 11 (length 5).
@@ -132,33 +132,33 @@ Physical qubits 0 and 11 aren't adjacent. Shortest path: 0 → 1 → 2 → 6 →
 We can SWAP L0 toward L3:
 
 ```
-Step 1: SWAP(0, 1) — L0 moves from physical qubit 0 to physical qubit 1
-     0  —[L0]— 2  — 3
+Step 1: SWAP(0, 1) - L0 moves from physical qubit 0 to physical qubit 1
+     0  -[L0]- 2  - 3
      |         |       
-     4  — 5  — 6  — 7
+     4  - 5  - 6  - 7
           |         |   
-     8  — 9  —10  —[L3]
+     8  - 9  -10  -[L3]
 
-Step 2: SWAP(1, 2) — L0 moves to physical qubit 2
-     0  — 1  —[L0]— 3
+Step 2: SWAP(1, 2) - L0 moves to physical qubit 2
+     0  - 1  -[L0]- 3
      |         |       
-     4  — 5  — 6  — 7
+     4  - 5  - 6  - 7
           |         |   
-     8  — 9  —10  —[L3]
+     8  - 9  -10  -[L3]
 
-Step 3: SWAP(2, 6) — L0 moves to physical qubit 6
-     0  — 1  — 2  — 3
+Step 3: SWAP(2, 6) - L0 moves to physical qubit 6
+     0  - 1  - 2  - 3
      |        |       
-     4  — 5  —[L0]— 7
+     4  - 5  -[L0]- 7
           |         |   
-     8  — 9  —10  —[L3]
+     8  - 9  -10  -[L3]
 
-Step 4: SWAP(6, 7) — L0 moves to physical qubit 7
-     0  — 1  — 2  — 3
+Step 4: SWAP(6, 7) - L0 moves to physical qubit 7
+     0  - 1  - 2  - 3
      |         |       
-     4  — 5  — 6  —[L0]
+     4  - 5  - 6  -[L0]
           |         |   
-     8  — 9  —10  —[L3]
+     8  - 9  -10  -[L3]
 
 Step 5: Now L0 (physical 7) and L3 (physical 11) ARE adjacent!
         → Execute the two-qubit gate. Done.
@@ -182,9 +182,9 @@ That took **4 SWAPs**. A better initial placement (e.g., putting L0 and L3 on ad
 
 **Question**: when two qubits need to interact but aren't adjacent, which SWAPs do you insert?
 
-**Why it matters**: every SWAP adds cost. Greedy routing (always SWAP along the shortest path to the current gate) ignores the rest of the program — a SWAP that helps gate #5 might make gate #6 much harder.
+**Why it matters**: every SWAP adds cost. Greedy routing (always SWAP along the shortest path to the current gate) ignores the rest of the program - a SWAP that helps gate #5 might make gate #6 much harder.
 
-**CS framing**: this is a **path planning** problem with a twist — every SWAP changes the state of the graph (qubit positions move), so future routing depends on past decisions.
+**CS framing**: this is a **path planning** problem with a twist - every SWAP changes the state of the graph (qubit positions move), so future routing depends on past decisions.
 
 **Approaches**: greedy shortest-path (baseline), look-ahead heuristics that consider upcoming gates (better), SABRE-style bidirectional search (state of the art). See the [IBM SABRE tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) for a detailed walkthrough of the best known heuristic.
 
@@ -196,11 +196,11 @@ That took **4 SWAPs**. A better initial placement (e.g., putting L0 and L3 on ad
 
 **CS framing**: this is **DAG scheduling** / **bin packing**. Build a dependency graph of operations that respects both the original gate order and qubit conflicts, then assign operations to time slots such that no two operations in the same slot share a qubit.
 
-**Approaches**: sequential execution (no parallelism — baseline), greedy layer packing (decent), DAG-based topological scheduling (good).
+**Approaches**: sequential execution (no parallelism - baseline), greedy layer packing (decent), DAG-based topological scheduling (good).
 
 ---
 
-# Scheduling — Parallelism Matters
+# Scheduling - Parallelism Matters
 
 ## The "1Q Free, 2Q Exclusive" Execution Model
 
@@ -208,7 +208,7 @@ For scoring purposes, the hardware works like this:
 
 - **Single-qubit gates take zero time.** They're instant. Don't worry about them for scheduling.
 - **Two-qubit gates** (including SWAPs) execute in **layers**. Each layer is one time step.
-- Within a layer, you can run **any number of 2Q gates** — as long as they all act on **non-overlapping qubits** (no qubit appears in two gates in the same layer) and you do not violate the original program order.
+- Within a layer, you can run **any number of 2Q gates** - as long as they all act on **non-overlapping qubits** (no qubit appears in two gates in the same layer) and you do not violate the original program order.
 
 ### Example: Sequential vs. Parallel
 
@@ -236,13 +236,13 @@ Layer 3: CNOT(2,6)                  ← both qubits were used in layer 2 → new
 → Depth = 3
 ```
 
-Same gates, same SWAPs, but **depth drops from 5 to 3** — a 40% improvement just from better scheduling.
+Same gates, same SWAPs, but **depth drops from 5 to 3** - a 40% improvement just from better scheduling.
 
 ---
 
 # Scoring & Submission
 
-## Scoring Formula — Worked Example
+## Scoring Formula - Worked Example
 
 Suppose on one benchmark:
 - Your routing inserts **8 SWAPs**
@@ -300,17 +300,17 @@ def solve(program, hardware_graph):
 
 ---
 
-# Stretch Goals — For Extra Points
+# Stretch Goals - For Extra Points
 
 ## Stretch Goal A: Gate Decomposition
 
 ### What It Is
 
-Real quantum hardware can only execute a small set of **native gates** — think of them like the assembly instructions of a CPU. For this challenge, the native set is `{RZ, SX, CNOT}`:
+Real quantum hardware can only execute a small set of **native gates** - think of them like the assembly instructions of a CPU. For this challenge, the native set is `{RZ, SX, CNOT}`:
 
-- `RZ(θ)` — a single-qubit rotation (one parameter)
-- `SX` — a fixed single-qubit gate (no parameters)
-- `CNOT` — a two-qubit gate (the only native two-qubit operation)
+- `RZ(θ)` - a single-qubit rotation (one parameter)
+- `SX` - a fixed single-qubit gate (no parameters)
+- `CNOT` - a two-qubit gate (the only native two-qubit operation)
 
 Every other gate (Hadamard, SWAP, Toffoli, etc.) must be **decomposed** into sequences of these three gates.
 
@@ -321,7 +321,7 @@ The provided `baseline_decompose.py` uses the most wasteful valid decompositions
 ```
 Hadamard gate:
   Good decomposition:  RZ(π/2) → SX → RZ(π/2)           [3 gates]
-  Bad baseline:        RZ(π/2) → SX → RZ(π/2) → RZ(0) → RZ(0)  [5 gates — two identity rotations!]
+  Bad baseline:        RZ(π/2) → SX → RZ(π/2) → RZ(0) → RZ(0)  [5 gates - two identity rotations!]
 
 SWAP gate:
   Good decomposition:  3 CNOTs with minimal overhead       [~9 native gates]
@@ -334,7 +334,7 @@ SWAP gate:
 
 See the [PennyLane Circuit Compilation demo](https://pennylane.ai/qml/demos/tutorial_circuit_compilation) for a full walkthrough.
 
-**Harder (custom optimization)**: choose decompositions that create opportunities for cancellation with neighboring gates. This is context-aware instruction selection — a real compiler optimization problem.
+**Harder (custom optimization)**: choose decompositions that create opportunities for cancellation with neighboring gates. This is context-aware instruction selection - a real compiler optimization problem.
 
 ## Stretch Goal B: Single-Qubit Optimization
 
@@ -396,23 +396,23 @@ The bad baseline literally does nothing (`return circuit`). **Any** simplificati
 
 - **"My routing produces invalid output"** → print your routed program and check each 2Q gate: is it on an edge? Use `hardware_graph.has_edge(p, q)` to verify.
 - **"My SWAP tracking is wrong"** → maintain a `placement` dict that you update after every SWAP. Print it frequently.
-- **"I can't beat the baseline on the dense benchmarks"** → that's expected — dense programs need many SWAPs no matter what. Focus on placement optimization; even small improvements compound across many gates.
+- **"I can't beat the baseline on the dense benchmarks"** → that's expected - dense programs need many SWAPs no matter what. Focus on placement optimization; even small improvements compound across many gates.
 - **"I don't know where to start"** → implement the greedy baseline yourself (don't just use ours). Understanding *why* it's bad will give you ideas for improvement.
 
 ## Key Resources
 
 ### For the Core Challenge
-- 📖 [PostQuantum: Routing Quantum Information](https://postquantum.com/quantum-computing/routing-quantum-information/) — start here for the big picture
-- 📖 [IBM SABRE Tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) — detailed walkthrough of the best known routing heuristic
-- 🔧 [networkx: Shortest Paths](https://networkx.org/documentation/stable/reference/algorithms/shortest_paths.html) — `nx.shortest_path()` is your best friend
-- 🔧 [networkx: Graph Generators](https://networkx.org/documentation/stable/reference/generators.html) — if you want to test on other topologies
+- 📖 [PostQuantum: Routing Quantum Information](https://postquantum.com/quantum-computing/routing-quantum-information/) - start here for the big picture
+- 📖 [IBM SABRE Tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) - detailed walkthrough of the best known routing heuristic
+- 🔧 [networkx: Shortest Paths](https://networkx.org/documentation/stable/reference/algorithms/shortest_paths.html) - `nx.shortest_path()` is your best friend
+- 🔧 [networkx: Graph Generators](https://networkx.org/documentation/stable/reference/generators.html) - if you want to test on other topologies
 
 ### For Stretch Goals
-- 📖 [PennyLane: Compilation of Quantum Circuits](https://pennylane.ai/qml/demos/tutorial_circuit_compilation) — full walkthrough of gate cancellation, rotation merging, and decomposition
-- 🔧 [PennyLane `qml.compile` docs](https://docs.pennylane.ai/en/stable/code/api/pennylane.compile.html) — one-liner compilation with configurable pipeline
-- 🔧 [PennyLane `qml.transforms` reference](https://docs.pennylane.ai/en/stable/code/qml_transforms.html) — `cancel_inverses`, `merge_rotations`, `single_qubit_fusion`, `decompose`
+- 📖 [PennyLane: Compilation of Quantum Circuits](https://pennylane.ai/qml/demos/tutorial_circuit_compilation) - full walkthrough of gate cancellation, rotation merging, and decomposition
+- 🔧 [PennyLane `qml.compile` docs](https://docs.pennylane.ai/en/stable/code/api/pennylane.compile.html) - one-liner compilation with configurable pipeline
+- 🔧 [PennyLane `qml.transforms` reference](https://docs.pennylane.ai/en/stable/code/qml_transforms.html) - `cancel_inverses`, `merge_rotations`, `single_qubit_fusion`, `decompose`
 
 ### For Going Deep
-- 📄 Li et al., "Tackling the Qubit Mapping Problem for NISQ-Era Quantum Devices" (ASPLOS 2019) — the original SABRE paper
-- 📄 [RL-based transpilation (arXiv:2405.13196)](https://arxiv.org/abs/2405.13196) — reinforcement learning for SWAP selection
-- 📄 [NASSC: Not All SWAPs Have the Same Cost (HPCA 2022)](https://hzhou.wordpress.ncsu.edu/files/2022/12/HPCA22_NASSC.pdf) — choosing SWAPs that enable downstream gate cancellation
+- 📄 Li et al., "Tackling the Qubit Mapping Problem for NISQ-Era Quantum Devices" (ASPLOS 2019) - the original SABRE paper
+- 📄 [RL-based transpilation (arXiv:2405.13196)](https://arxiv.org/abs/2405.13196) - reinforcement learning for SWAP selection
+- 📄 [NASSC: Not All SWAPs Have the Same Cost (HPCA 2022)](https://hzhou.wordpress.ncsu.edu/files/2022/12/HPCA22_NASSC.pdf) - choosing SWAPs that enable downstream gate cancellation
