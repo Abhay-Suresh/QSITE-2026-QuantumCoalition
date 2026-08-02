@@ -1,8 +1,4 @@
-# Computational Track: Compiling for Quantum Computers
-
-## Hacker Handout
-
----
+# Challenge 1: Compiling for Quantum Computers
 
 # Overview
 
@@ -10,7 +6,43 @@
 >
 > **For extra points**, optimize the gate decomposition and single-qubit gate layers - we provide intentionally bad baselines for both that are easy to beat.
 
-### The Compilation Pipeline
+The problem can be broken roughly into three sub-problems:
+
+### 1. Placement
+
+**Question**: which logical qubit goes on which physical qubit?
+
+**Why it matters**: a good placement puts frequently-interacting logical qubits on nearby physical qubits, reducing the number of SWAPs needed. A bad placement puts them far apart.
+
+**CS framing**: this is a **graph assignment** problem. You're mapping the nodes of one graph (your program's interaction pattern) onto the nodes of another graph (the hardware), trying to minimize some distance metric.
+
+**Possible approaches**: random assignment, degree-matching heuristics, simulated annealing, exhaustive search on small instances.
+
+### 2. Routing
+
+**Question**: when two qubits need to interact but aren't adjacent, which SWAPs do you insert?
+
+**Why it matters**: every SWAP adds cost. Greedy routing (always SWAP along the shortest path to the current gate) ignores the rest of the program - a SWAP that helps gate #5 might make gate #6 much harder.
+
+**CS framing**: this is a **path planning** problem with a twist - every SWAP changes the state of the graph (qubit positions move), so future routing depends on past decisions.
+
+**Possible approaches**: greedy shortest-path, look-ahead heuristics that consider upcoming gates, SABRE-style bidirectional search. See the [IBM SABRE tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) for a detailed walkthrough of the best known heuristic.
+
+### 3. Scheduling
+
+**Question**: which two-qubit operations can run at the same time?
+
+**Why it matters**: running gates in parallel reduces the total circuit depth (execution time). Two 2-qubit gates can run simultaneously if they act on disjoint sets of qubits.
+
+**CS framing**: this is a **DAG scheduling** / **bin packing** problem. Build a dependency graph of operations that respects both the original gate order and qubit conflicts, then assign operations to time slots such that no two operations in the same slot share a qubit.
+
+**Possible approaches**: sequential execution (no parallelization), greedy layer packing, DAG-based topological scheduling.
+
+---
+
+
+
+## The Compilation Pipeline
 
 ```
 Abstract Circuit
@@ -28,7 +60,7 @@ Abstract Circuit
 Executable Circuit
 ```
 
-### What You Receive
+## What You Receive
 
 | Item | Description |
 |---|---|
@@ -38,14 +70,14 @@ Executable Circuit
 | **Scorer** | An autograder that checks correctness and computes your score |
 | **Starter notebook** | Setup, examples, walkthrough, and submission template |
 
-### What You Submit
+## What You Submit
 
 1. A `solve(program, hardware_graph)` function that returns a placement and routed program
 2. (Optional) `decompose()` and `optimize_1q()` functions for stretch goals
 3. A 1–2 page writeup explaining your approach
 4. A 3–5 minute demo/presentation
 
-### How You're Scored
+## How You're Scored
 
 ```
 total_score = core_score - stretch_A_bonus - stretch_B_bonus      (lower is better)
@@ -60,7 +92,7 @@ core_score = Σ_benchmarks [ swap_count + 0.5 × depth ]
 - Stretch A: `0.1 × (gates saved vs. bad decomposer)`
 - Stretch B: `0.05 × (1Q gates saved vs. bad 1Q optimizer)`
 
-### Essential Resources
+## Essential Resources
 
 - [PostQuantum: Routing Quantum Information](https://postquantum.com/quantum-computing/routing-quantum-information/) - visual intro to SWAP routing
 - [IBM SABRE Tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) - the industry-standard routing algorithm explained
@@ -69,9 +101,9 @@ core_score = Σ_benchmarks [ swap_count + 0.5 × depth ]
 
 ---
 
-# The Problem - No Quantum Required
+# Introduction to the problem
 
-## Think of It Like a Delivery Routing Problem
+## Delivery Routing Problem
 
 Imagine you're a logistics planner. You have:
 
@@ -85,7 +117,7 @@ Your job: decide where to place your people (placement), how to relay packages w
 
 **That's the entire problem.** Replace "buildings" with "qubits," "roads" with "physical connections," "package exchange" with "two-qubit gate," and "relay" with "SWAP" - and you have quantum circuit compilation.
 
-## The Hardware Graph
+### Hardware Graph
 
 Your "street map" is a **20-qubit heavy-hex-style teaching graph**. It looks like this:
 
@@ -108,7 +140,7 @@ Key properties:
 
 In the starter notebook, this graph is built directly in code as a `networkx.Graph`. You can visualize it, query shortest paths, check adjacency, and test heuristics with standard NetworkX functions.
 
-## What Is a SWAP?
+### What Is a SWAP gate?
 
 A SWAP exchanges the quantum states of two adjacent qubits. After a SWAP between qubits A and B, the state that was in A is now in B, and vice versa.
 
@@ -166,43 +198,7 @@ Step 5: Now L0 (physical 7) and L3 (physical 11) ARE adjacent!
 
 That took **4 SWAPs**. A better initial placement (e.g., putting L0 and L3 on adjacent physical qubits) could have taken **0 SWAPs**. That's why placement matters.
 
-## The Three Sub-Problems
-
-### 1. Placement
-
-**Question**: which logical qubit goes on which physical qubit?
-
-**Why it matters**: a good placement puts frequently-interacting logical qubits on nearby physical qubits, reducing the number of SWAPs needed. A bad placement puts them far apart.
-
-**CS framing**: this is a **graph assignment** problem. You're mapping the nodes of one graph (your program's interaction pattern) onto the nodes of another graph (the hardware), trying to minimize some distance metric.
-
-**Approaches**: random assignment (bad), degree-matching heuristics (decent), simulated annealing (good), exhaustive search on small instances (optimal but slow).
-
-### 2. Routing
-
-**Question**: when two qubits need to interact but aren't adjacent, which SWAPs do you insert?
-
-**Why it matters**: every SWAP adds cost. Greedy routing (always SWAP along the shortest path to the current gate) ignores the rest of the program - a SWAP that helps gate #5 might make gate #6 much harder.
-
-**CS framing**: this is a **path planning** problem with a twist - every SWAP changes the state of the graph (qubit positions move), so future routing depends on past decisions.
-
-**Approaches**: greedy shortest-path (baseline), look-ahead heuristics that consider upcoming gates (better), SABRE-style bidirectional search (state of the art). See the [IBM SABRE tutorial](https://quantum.cloud.ibm.com/docs/en/tutorials/transpilation-optimizations-with-sabre) for a detailed walkthrough of the best known heuristic.
-
-### 3. Scheduling
-
-**Question**: which two-qubit operations can run at the same time?
-
-**Why it matters**: running gates in parallel reduces the total circuit depth (execution time). Two 2Q gates can run simultaneously if they act on completely different qubits.
-
-**CS framing**: this is **DAG scheduling** / **bin packing**. Build a dependency graph of operations that respects both the original gate order and qubit conflicts, then assign operations to time slots such that no two operations in the same slot share a qubit.
-
-**Approaches**: sequential execution (no parallelism - baseline), greedy layer packing (decent), DAG-based topological scheduling (good).
-
----
-
-# Scheduling - Parallelism Matters
-
-## The "1Q Free, 2Q Exclusive" Execution Model
+## Quantum parallelization
 
 For scoring purposes, the hardware works like this:
 
@@ -244,24 +240,20 @@ Same gates, same SWAPs, but **depth drops from 5 to 3** - a 40% improvement just
 
 ## Scoring Formula - Worked Example
 
-Suppose on one benchmark:
-- Your routing inserts **8 SWAPs**
-- Your scheduling achieves a **depth of 12** (2Q layers)
+Your benchmark score is calculated as follows:
 
 ```
-benchmark_score = 8 × 1.0 + 12 × 0.5 = 8 + 6 = 14
+benchmark_score = (# SWAPS) × 1.0 + (circuit depth) × 0.5 
 ```
 
 Your total core score is the sum across all benchmarks.
 
-If you also attempted Stretch Goal A and saved 40 gates vs. the bad decomposer:
-```
-stretch_A_bonus = 40 × 0.1 = 4.0
-```
+If you also attempted Stretch Goal A and improved the bad decomposer by N gates, then your score improves by:
 
 ```
-total_score = core_score - 4.0
+stretch_A_bonus = N × 0.1
 ```
+A lower score is better.
 
 ## What "Correct" Means
 
@@ -304,7 +296,7 @@ def solve(program, hardware_graph):
 
 ## Stretch Goal A: Gate Decomposition
 
-### What It Is
+### Introduction
 
 Real quantum hardware can only execute a small set of **native gates** - think of them like the assembly instructions of a CPU. For this challenge, the native set is `{RZ, SX, CNOT}`:
 
