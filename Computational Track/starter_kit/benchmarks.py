@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import random
 
-
 def _star_program(center: int, leaves: range) -> list[tuple[str, int, int]]:
     return [("2Q", center, leaf) for leaf in leaves]
 

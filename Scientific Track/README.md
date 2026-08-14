@@ -1,9 +1,5 @@
 # Theory Track: Mapping the Phase Diagram of the ANNNI Model Under Noise
 
-## Hacker Handout
-
----
-
 # Overview
 
 > **Map the phase diagram of the 1D ANNNI model in the (κ, h) plane using PennyLane. Then study how depolarizing noise on two-qubit gates distorts the phase boundaries. Identify which phases are most robust to noise and which are most fragile.**
@@ -44,11 +40,18 @@ You should read both before starting. The starter kit builds on top of them.
 
 ---
 
-# The ANNNI Model - What Are We Simulating?
+# The ANNNI Model
 
 ## Spins on a Chain
 
-Imagine a row of tiny magnets (spins), each pointing either **up** (↑) or **down** (↓). In quantum mechanics, each spin can also be in a **superposition** of up and down - but for building intuition, think of them as little arrows.
+Imagine a row of tiny magnets (spins), each pointing either **up** (↑) or **down** (↓). In quantum mechanics, each spin can also be in a **superposition** of up and down, which we denote by (→).
+
+**The Hamiltonian**:
+```
+H = -ΣZᵢZᵢ₊₁ + κΣZᵢZᵢ₊₂ - hΣXᵢ
+```
+
+The Hamiltonian is the function of the orientations of the spins that determines the energy of each configuration. Unlike a more familiar phase transition such as ice melting into water, we will study the phases of this system at zero temperature. In this setting, the system prefers the ground state of the Hamiltonian; the state with the lowest total energy.
 
 ```
 Site:     1    2    3    4    5    6    7    8
@@ -57,35 +60,32 @@ Spin:     ↑    ↑    ↑    ↑    ↑    ↑    ↑    ↑     ← ferromagn
           →    →    →    →    →    →    →    →     ← paramagnetic (aligned with field)
 ```
 
-What determines which pattern the spins settle into? **The Hamiltonian** - the energy function that describes all the forces acting on the spins.
 
-## The Three Competing Forces
+## Three competing interactions
 
-The ANNNI model has three terms that each "want" something different:
+One way to gain intuition about the ground state of the Hamiltonian is to study it in different limits, where different interactions dominate. In these limits, the ground state is the state which minimizes the energy of each interaction individually.
 
-### Force 1: Nearest-Neighbor Coupling ($-J_1 \sum_i Z_i Z_{i+1}$)
+### Nearest-Neighbor Coupling ($-\sum_i Z_i Z_{i+1}$)
 
-Adjacent spins want to **align** (both up or both down). This is the ferromagnetic interaction. If this force dominates, all spins point the same way.
+The configurations that minimize this term have all spins **aligned** either up or down. In analogy with a magnet, this is called the ferromagnetic interaction. If this interaction dominates, all spins point the same way.
 
 ```
-J₁ wins:   ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑    (ferromagnetic - everyone agrees)
-            ←--→←--→←--→←--→
+J₁ wins:   ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑    (ferromagnetic phase)
             "align with your neighbor"
 ```
 
-### Force 2: Next-Nearest-Neighbor Frustration ($+J_1\kappa \sum_i Z_i Z_{i+2}$)
+### Next-Nearest-Neighbor Frustration ($+\kappa \sum_i Z_i Z_{i+2}$)
 
-Spins two sites apart want to **anti-align** (one up, one down). This directly competes with Force 1 - if your nearest neighbor wants you to point up but your next-nearest neighbor wants you to point down, which do you listen to? This tension is called **frustration**.
+The energy of this interaction is minimized when the next-nearest-neighbor (NNN) spins are **anti-aligned** (one up, one down). When $\kappa$ is order unity, it is impossible to minimize the NNN interaction and the ferromagnetic intertaction simultaneously, which is known as classical frustration.
 
 ```
-|J₂| wins:   ↑ ↑ ↓ ↓ ↑ ↑ ↓ ↓    (antiphase - compromise pattern)
-              ←---→ ←---→ ←---→
+|J₂| wins:   ↑ ↑ ↓ ↓ ↑ ↑ ↓ ↓    (antiphase)
               "anti-align with your next-nearest neighbor"
 ```
 
-### Force 3: Transverse Field ($-h \sum_i X_i$)
+### Transverse Field ($-h \sum_i X_i$)
 
-An external magnetic field pointing sideways tries to rotate all spins to point along its direction. If this field is strong enough, it overwhelms both coupling forces and disorders the system.
+An external magnetic field pointing sideways tries to rotate all spins to point along its direction. 
 
 ```
 h wins:    → → → → → → → →    (paramagnetic - everyone follows the field)
@@ -94,14 +94,14 @@ h wins:    → → → → → → → →    (paramagnetic - everyone follows t
 
 ## The Hamiltonian
 
-Putting it all together, with $J_1 > 0$ as the ferromagnetic coupling and $\kappa = |J_2|/J_1 \geq 0$ as the dimensionless frustration ratio:
+Putting it all together, 
 
-$$H = -J_1 \sum_i Z_i Z_{i+1} \;+\; J_1\kappa \sum_i Z_i Z_{i+2} - h \sum_i X_i$$
+$$H = - \sum_i Z_i Z_{i+1} \;+\; \kappa \sum_i Z_i Z_{i+2} - h \sum_i X_i$$
 
-The positive sign on the second term reflects that the next-nearest interaction is antiferromagnetic (it prefers anti-aligned spins two sites apart, competing with the nearest-neighbor ferromagnetic alignment). By convention we set $J_1 = 1$, so the two free parameters are:
+The positive sign on the second term reflects that the next-nearest interaction is antiferromagnetic (it prefers anti-aligned spins two sites apart, competing with the nearest-neighbor ferromagnetic alignment). The two free parameters are:
 
 - **$\kappa \geq 0$** — frustration strength. At $\kappa = 0$ there is no competing interaction; above $\kappa \approx 0.5$ the antiphase becomes the dominant ordered phase at low field.
-- **$h \geq 0$** — transverse field strength (in units of $J_1$).
+- **$h \geq 0$** — transverse field strength.
 
 By sweeping $\kappa$ from 0 to 1 and $h$ from 0 to 2, we can map out the **phase diagram** - a 2D plot showing which phase the system is in at each $(\kappa, h)$ point.
 
@@ -128,11 +128,8 @@ H = build_annni_hamiltonian(n_qubits=8, kappa=0.3, h=0.5)
 
 ## What Is a Phase Transition?
 
-You know how water suddenly becomes ice at 0°C? The molecules are the same, but their collective behavior changes abruptly. That's a classical phase transition driven by temperature.
-
-**Quantum phase transitions** are similar but driven by changing the Hamiltonian parameters (like $\kappa$ and $h$) at zero temperature. As you smoothly change a parameter, the **ground state** (lowest-energy state) of the system can suddenly change its character - from ordered to disordered, from one pattern to another.
-
-The points where this happens are **phase boundaries**, and finding them is the core of this challenge.
+A phase transition is an abrupt change in some measurable quantity due to the emergent collective behavior of many constituent parts.
+**Quantum phase transitions** are similar but driven by changing the Hamiltonian parameters (like $\kappa$ and $h$) at zero temperature. As you smoothly change a parameter, the **ground state** (lowest-energy state) of the system can suddenly change its character. The points where this abrupt change happens are **phase boundaries**, and finding them is the core of this challenge.
 
 ## How to Detect Phase Transitions Computationally
 
@@ -380,14 +377,12 @@ Each of these is a valid approach with different tradeoffs:
 - Accessible writeup
 - Engaging presentation
 
-## Suggested Timeline
+## Suggested workflow
 
-| Phase | Hours | Focus |
-|---|---|---|
-| **Learn** | 0–8 | Read this handout and the two PennyLane resources. Build the Hamiltonian. Get one ground state working at a single $(\kappa, h)$ point. Verify against exact diag. |
-| **Map** | 8–20 | Implement your phase classification method. Scan the full $(\kappa, h)$ grid. Produce the clean phase diagram. Compare to analytical boundaries. Debug. |
-| **Noise** | 20–30 | Add depolarizing noise. Re-run at $p = 0.01$ and $p = 0.05$. Produce noisy phase diagrams. Start the comparison analysis. |
-| **Polish** | 30–36 | Write analysis, create figures, prepare presentation. Attempt bonus goals if time permits. |
+-  Read this handout and the two PennyLane resources. Build the Hamiltonian. Get one ground state working at a single $(\kappa, h)$ point. Verify against exact diagonalization.
+- Implement your phase classification method. Scan the full $(\kappa, h)$ grid. Produce the clean phase diagram. Compare to analytical boundaries. Debug.
+- Add depolarizing noise. Re-run at $p = 0.01$ and $p = 0.05$. Produce noisy phase diagrams. Start the comparison analysis.
+- Write analysis, create figures, prepare presentation. Attempt bonus goals if time permits.
 
 ## Key Resources - Annotated
 

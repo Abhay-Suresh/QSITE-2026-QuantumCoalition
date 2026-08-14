@@ -1,14 +1,10 @@
-# Bitcamp 2026 - Quantum Track
+# Quantum Coalition QSITE 2026 Challenge
 
-Welcome to the Quantum Track of the UMD Bitcamp Hackathon! Below is an overview of both tracks.
-
-If you have any questions feel free to ping - [UQA leadership](https://discord.gg/U7ESA74D) or track mentors.
-
-Workshop resources and (completely optional) [notebooks](https://docs.google.com/document/d/1rISiL1AhbTGiic1FWpSQoO6fZNbj6XDcAdE3Vvi_jak/edit?tab=t.0) are also available for a crash course on quantum computing
+Welcome to the Quantum Coalition's QSITE 2026 hackathon challenge! There are two tracks available. The first track will have you thinking like a quantum computer scientist by solving a routing problem relevant to NISQ hardware. The second track will get you thinking like a physicist by exploring how a quantum computer could be used to probe phases of matter.
 
 ---
 
-## Tracks at a Glance
+##  Introducing the tracks
 
 | | Computational Track | Scientific Track |
 |---|---|---|
@@ -38,19 +34,24 @@ Workshop resources and (completely optional) [notebooks](https://docs.google.com
 
 ## Setup
 
-Each track now includes its own `uv` project so you can recreate the environment locally instead of depending on a prebuilt `venv`.
+Each track includes its own `uv` project so you can recreate the environment locally instead of depending on a prebuilt `venv`.
 
 ```bash
 # install uv first if needed:
 # https://docs.astral.sh/uv/getting-started/installation/
+# If you are using conda:
+conda install -c conda-forge uv
 
-# create the Computational Track environment
+# clone the repo
+git clone https://github.com/benmcdonough20/QSITE-2026-QuantumCoalition.git
+
+# create the Computational Track environment (from root dir)
 uv sync --project "Computational Track"
 
+# within the root directory,
 # create the Scientific Track environment
 uv sync --project "Scientific Track"
 ```
-
 Both track environments target Python 3.14. The Scientific Track environment pins PennyLane `0.44.1`.
 
 To work on a track, the simplest option is to run Jupyter through `uv`:
@@ -87,10 +88,6 @@ def solve(program, hardware_graph):
     # Returns: (initial_placement: dict, routed_program: list[tuple])
 ```
 
-**Stretch goals** (optional bonus points):
-- **A**: decompose into native gates `{RZ, SX, CNOT}` - beat the wasteful baseline
-- **B**: fuse and cancel redundant single-qubit gates - beat the no-op baseline
-
 The starter kit provides a scorer, six benchmark programs, a hardware graph, and three bad baselines to improve on.
 
 ---
@@ -101,7 +98,7 @@ The starter kit provides a scorer, six benchmark programs, a hardware graph, and
 
 **The model**:
 ```
-H = -J₁ΣZᵢZᵢ₊₁ + J₁κΣZᵢZᵢ₊₂ - hΣXᵢ
+H = -ΣZᵢZᵢ₊₁ + κΣZᵢZᵢ₊₂ - hΣXᵢ
 ```
 Four phases: ferromagnetic, antiphase, paramagnetic, and floating.
 
@@ -118,7 +115,7 @@ The starter kit provides the Hamiltonian builder, exact diagonalization, noisy c
 
 ---
 
-## Key External Resources
+## External Resources
 
 **Computational Track**
 - [PostQuantum: Routing Quantum Information](https://postquantum.com/quantum-computing/routing-quantum-information/) - visual intro to SWAP routing

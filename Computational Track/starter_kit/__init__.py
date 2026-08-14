@@ -1,7 +1,5 @@
 """Starter-kit utilities for the computational track."""
 
-from .baseline_decompose import decompose as baseline_decompose
-from .baseline_oneq import optimize_1q as baseline_optimize_1q
 from .baseline_routing import solve as baseline_solve
 from .benchmarks import BENCHMARKS, benchmark_stats
 from .hardware import HARDWARE_EDGES, HARDWARE_POSITIONS, build_hardware_graph
@@ -14,8 +12,6 @@ __all__ = [
     "HARDWARE_POSITIONS",
     "animate_layers",
     "animate_routing",
-    "baseline_decompose",
-    "baseline_optimize_1q",
     "baseline_solve",
     "benchmark_stats",
     "build_hardware_graph",
