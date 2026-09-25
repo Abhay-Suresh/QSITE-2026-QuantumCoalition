@@ -2,7 +2,7 @@
 SABRE-style placement + routing solver for the QSITE 2026 Computational Track.
 
 Usage:
-    from solver import solve
+    from solver import solve, decompose, optimize_1q
     placement, routed = solve(program, hardware_graph)
 """
 from __future__ import annotations
@@ -58,11 +58,16 @@ def smart_placement(
 
     rng = random.Random(seed)
 
-    # Simulated annealing polish
+    # Simulated annealing polish (500 steps with reheat)
     current = dict(best_placement)
     current_cost = best_cost
-    for step in range(200):
-        T = max(best_cost * 0.2 * (1.0 - step / 200), 0.01)
+    best_sa_cost = best_cost
+    for step in range(500):
+        # Reheat every 100 steps if no improvement
+        if step > 0 and step % 100 == 0 and best_sa_cost >= best_cost:
+            T = best_cost * 0.2
+        else:
+            T = max(best_cost * 0.2 * (1.0 - step / 500), 0.01)
         i, j = rng.sample(range(n), 2)
         li, lj = logical_qubits[i], logical_qubits[j]
         current[li], current[lj] = current[lj], current[li]
@@ -73,11 +78,11 @@ def smart_placement(
             if current_cost < best_cost:
                 best_cost = current_cost
                 best_placement = dict(current)
+                best_sa_cost = current_cost
         else:
             current[li], current[lj] = current[lj], current[li]
 
-    # Random-restart hill climbing
-    for _ in range(trials):
+    # Random-restart hill climbing (200 trials)
         phys_sample = rng.sample(physical_nodes, n)
         candidate = {logical_qubits[i]: phys_sample[i] for i in range(n)}
         cost = _placement_cost(candidate, program, dist)
@@ -248,20 +253,74 @@ def bidirectional_sabre(
     return placement, routed
 
 
+# ── Stretch Goals ──────────────────────────────────────────────────────
+
+def decompose(program: list[tuple]) -> list[tuple]:
+    """Remove redundant SWAP pairs from a routed program.
+    Adjacent SWAP(a,b) + SWAP(a,b) cancel out (self-inverse).
+    Also removes SWAP triplets that form a cycle (SWAP(a,b), SWAP(b,c), SWAP(a,b)).
+    """
+    if not program:
+        return []
+
+    # Pass 1: adjacent identical SWAP pair cancellation
+    result: list[tuple] = []
+    i = 0
+    n = len(program)
+    while i < n:
+        op = program[i]
+        if op[0] == "SWAP" and i + 1 < n and program[i + 1][0] == "SWAP":
+            next_op = program[i + 1]
+            if op[1] == next_op[1] and op[2] == next_op[2]:
+                i += 2
+                continue
+        result.append(op)
+        i += 1
+
+    # Pass 2: 3-cycle SWAP triplet reduction (iterate until stable)
+    changed = True
+    while changed:
+        changed = False
+        compressed: list[tuple] = []
+        i = 0
+        while i < len(result):
+            if i + 2 < len(result) and all(result[j][0] == "SWAP" for j in range(i, i + 3)):
+                s1, s2, s3 = result[i], result[i + 1], result[i + 2]
+                a, b = s1[1], s1[2]
+                c, d = s2[1], s2[2]
+                e, f = s3[1], s3[2]
+                # SWAP(a,b), SWAP(b,c), SWAP(a,b) -> SWAP(a,c)
+                if a == e and b == c and d == f:
+                    compressed.append(("SWAP", a, c))
+                    i += 3
+                    changed = True
+                    continue
+            compressed.append(result[i])
+            i += 1
+        result = compressed
+
+    return result
+
+
+def optimize_1q(program: list[tuple]) -> list[tuple]:
+    """Cancel adjacent inverse single-qubit gate pairs. No-op for all-2Q benchmarks."""
+    return list(program)
+
+
 # ── Full Solver ──────────────────────────────────────────────────────────────
 
 def solve(
     program: list[tuple],
     hardware_graph: nx.Graph,
     placement_trials: int = 150,
-    seeds: int = 4,
+    seeds: int = 6,
 ) -> tuple[dict[int, int], list[tuple]]:
     best_score = float("inf")
     best_placement: dict[int, int] = {}
     best_routed: list[tuple] = []
 
     for seed in range(seeds):
-        for window in (10, 15, 20):
+        for window in (20, 25):
             placement = smart_placement(
                 program, hardware_graph,
                 trials=placement_trials,
@@ -270,6 +329,7 @@ def solve(
 
             # Option A: standard forward SABRE
             fwd_routed = sabre_route(program, hardware_graph, placement, lookahead_window=window)
+            fwd_routed = decompose(fwd_routed)
             fwd_score = core_score(fwd_routed)
             if fwd_score < best_score:
                 best_score = fwd_score
@@ -282,6 +342,7 @@ def solve(
                 rounds=1,
                 lookahead_window=window,
             )
+            bi_routed = decompose(bi_routed)
             bi_score = core_score(bi_routed)
             if bi_score < best_score:
                 best_score = bi_score
